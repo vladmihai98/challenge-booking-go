@@ -57,7 +57,7 @@ public class Car implements Comparable<Car>
         return type + " - " + price;
     }
 
-    public String toString(String supplier)
+    public String toStringSupplier()
     {
         return type + " - " + supplier + " - " + price;
     }

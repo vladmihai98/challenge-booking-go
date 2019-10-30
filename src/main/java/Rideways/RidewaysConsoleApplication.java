@@ -7,7 +7,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,7 +66,11 @@ public class RidewaysConsoleApplication
                 return;
             }
 
-            GetCheapestResults(args[1], passengers);
+            ArrayList<Car> results = GetCheapestResults(args[1], passengers);
+            results.forEach(car ->
+            {
+                System.out.println(car.toStringSupplier());
+            });
         }
     }
 
@@ -161,34 +164,10 @@ public class RidewaysConsoleApplication
         return resultList;
     }
 
-    private static HashMap<String, Integer> BuildHashMapFromHttpResult(String json, int passengers)
+    static ArrayList<Car> GetCheapestResults(String coordinates, int passengers)
     {
-        HashMap<String, Integer> result = new HashMap<>();
+        ArrayList<ArrayList<Car>> resultList = new ArrayList<>();
 
-        if(json != null)
-        {
-            JSONObject jsonObject = new JSONObject(json);
-            JSONArray options = jsonObject.getJSONArray("options");
-
-            for(int i = 0; i < options.length(); i++)
-            {
-                JSONObject subObject = options.getJSONObject(i);
-                String carType = subObject.getString("car_type");
-                int price = subObject.getInt("price");
-
-                // Consider only the cars that can fit in all passengers.
-                if(carTypeCapacity.get(carType) >= passengers)
-                {
-                    result.put(carType, price);
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static void GetCheapestResults(String coordinates, int passengers)
-    {
         // Build the hash map of car types and their capacity.
         PopulateCarHashMap();
 
@@ -254,12 +233,40 @@ public class RidewaysConsoleApplication
         HashMap<String, Integer> filteredEric = ericsTaxis.get();
         HashMap<String, Integer> filteredJeff = jeffsTaxis.get();
 
-        BuildAndPrintResults(filteredDave, filteredEric, filteredJeff);
+        return BuildFinalResults(filteredDave, filteredEric, filteredJeff);
     }
 
-    private static void BuildAndPrintResults(HashMap<String, Integer> dave, HashMap<String, Integer> eric,
-                                             HashMap<String, Integer> jeff)
+    private static HashMap<String, Integer> BuildHashMapFromHttpResult(String json, int passengers)
     {
+        HashMap<String, Integer> result = new HashMap<>();
+
+        if(json != null)
+        {
+            JSONObject jsonObject = new JSONObject(json);
+            JSONArray options = jsonObject.getJSONArray("options");
+
+            for(int i = 0; i < options.length(); i++)
+            {
+                JSONObject subObject = options.getJSONObject(i);
+                String carType = subObject.getString("car_type");
+                int price = subObject.getInt("price");
+
+                // Consider only the cars that can fit in all passengers.
+                if(carTypeCapacity.get(carType) >= passengers)
+                {
+                    result.put(carType, price);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static ArrayList<Car> BuildFinalResults(HashMap<String, Integer> dave, HashMap<String, Integer> eric,
+                                                    HashMap<String, Integer> jeff)
+    {
+        ArrayList<Car> resultList = new ArrayList<>();
+
         // Iterate over the collection of car types
         // Update provider and price based on whether we find the carType in the respective collection
         // And if it is cheaper than the current price.
@@ -302,9 +309,12 @@ public class RidewaysConsoleApplication
             // If we did find a car and a provider we can print it.
             if(!currentProvider.isEmpty())
             {
-                System.out.println(carType + " - " + currentProvider + " - " + currentPrice);
+                Car item = new Car(carType, currentProvider, currentPrice);
+                resultList.add(item);
             }
         }
+
+        return resultList;
     }
 
     // Helper functions below
