@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 @RestController
@@ -25,7 +26,7 @@ public class RidewaysAppController
 
         try
         {
-            TreeMap<Integer, String> results = RidewaysConsoleApplication.GetResultsFromDave(coordinates);
+            ArrayList<Car> results = RidewaysConsoleApplication.GetResultsFromDave(coordinates);
 
             if(results.isEmpty())
             {
@@ -34,11 +35,11 @@ public class RidewaysAppController
             else
             {
                 JSONArray jsonArray = new JSONArray();
-                results.forEach((key, value) ->
+                results.forEach(car ->
                 {
                     JSONObject jsonObject = new JSONObject();
-                    jsonObject.put("car_type", value);
-                    jsonObject.put("price", key);
+                    jsonObject.put("car_type", car.getType());
+                    jsonObject.put("price", car.getPrice());
                     jsonArray.put(jsonObject);
                 });
 

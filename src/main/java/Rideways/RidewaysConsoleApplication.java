@@ -7,10 +7,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +43,7 @@ public class RidewaysConsoleApplication
 
         if(option.equals("Dave"))
         {
-            TreeMap<Integer, String> results =  GetResultsFromDave(args[1]);
+            ArrayList<Car> results =  GetResultsFromDave(args[1]);
 
             if(results.isEmpty())
             {
@@ -54,12 +52,7 @@ public class RidewaysConsoleApplication
             }
 
             // Iterate over the collection and display the results.
-            for(Map.Entry<Integer, String> entry : results.entrySet())
-            {
-                Integer price = entry.getKey();
-                String carType = entry.getValue();
-                System.out.println(carType + " - " + price);
-            }
+            results.forEach(car -> System.out.println(car.toString()));
         }
         else if(option.equals("cheapest"))
         {
@@ -128,9 +121,9 @@ public class RidewaysConsoleApplication
         return option;
     }
 
-    static TreeMap<Integer, String> GetResultsFromDave(String coordinates)
+    static ArrayList<Car> GetResultsFromDave(String coordinates)
     {
-        TreeMap<Integer, String> orderedOptions = new TreeMap<Integer, String>(Collections.reverseOrder());
+        ArrayList<Car> resultList = new ArrayList<>();
 
         try
         {
@@ -149,7 +142,11 @@ public class RidewaysConsoleApplication
                     JSONObject subObject = options.getJSONObject(i);
                     String carType = subObject.getString("car_type");
                     int price = subObject.getInt("price");
-                    orderedOptions.put(price, carType);
+
+                    Car item = new Car();
+                    item.setPrice(price);
+                    item.setType(carType);
+                    resultList.add(item);
                 }
             }
         }
@@ -159,7 +156,9 @@ public class RidewaysConsoleApplication
             System.out.println("Exception retrieving details from Dave's API. Please try again. " + ex);
         }
 
-        return orderedOptions;
+        Collections.sort(resultList);
+        Collections.reverse(resultList);
+        return resultList;
     }
 
     private static HashMap<String, Integer> BuildHashMapFromHttpResult(String json, int passengers)
@@ -188,21 +187,20 @@ public class RidewaysConsoleApplication
         return result;
     }
 
-
-
     private static void GetCheapestResults(String coordinates, int passengers)
     {
+        // Build the hash map of car types and their capacity.
         PopulateCarHashMap();
 
         // Configure the OkHttpClient - needed for API access.
         ConfigureHttpClient();
 
+        // Run the requests in parallel since they do not depend on each other.
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         AtomicReference<HashMap<String, Integer>> davesTaxis = new AtomicReference<>(new HashMap<>());
         AtomicReference<HashMap<String, Integer>> ericsTaxis = new AtomicReference<>(new HashMap<>());
         AtomicReference<HashMap<String, Integer>> jeffsTaxis = new AtomicReference<>(new HashMap<>());
 
-        // Run the requests in parallel since they do not depend on each other.
         // Similar to C# Task.Run()
         executorService.execute(() ->
         {

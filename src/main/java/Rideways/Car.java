@@ -1,6 +1,6 @@
 package Rideways;
 
-public class Car
+public class Car implements Comparable<Car>
 {
     // TODO change to enum
     private String type;
@@ -9,7 +9,9 @@ public class Car
 
     public Car()
     {
-        // no impl
+        type = "";
+        supplier = "";
+        price = 0;
     }
 
     public Car(String type, String supplier, int price)
@@ -58,5 +60,11 @@ public class Car
     public String toString(String supplier)
     {
         return type + " - " + supplier + " - " + price;
+    }
+
+    @Override
+    public int compareTo(Car o)
+    {
+        return Integer.compare(this.price, o.price);
     }
 }
