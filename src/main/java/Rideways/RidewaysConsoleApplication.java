@@ -6,18 +6,21 @@ import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.swing.plaf.synth.SynthScrollBarUI;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Console application to handle input for the Part1 of the BookingGo challenge.
+ *
+ * @author Vlad Mihai Vasile
+ */
 public class RidewaysConsoleApplication
 {
     private static final HashMap<String, Integer> carTypeCapacity = new HashMap<String, Integer>();
@@ -40,6 +43,7 @@ public class RidewaysConsoleApplication
             return;
         }
 
+        // We're ready to go so build the OkHttpClient.
         ConfigureHttpClient();
 
         if(option.equals("Dave"))
@@ -207,20 +211,17 @@ public class RidewaysConsoleApplication
         AtomicReference<HashMap<String, Integer>> ericsTaxis = new AtomicReference<>(new HashMap<>());
         AtomicReference<HashMap<String, Integer>> jeffsTaxis = new AtomicReference<>(new HashMap<>());
 
-        // Run the requests in parallel since they do not depend on eachother
+        // Run the requests in parallel since they do not depend on each other.
         // Similar to C# Task.Run()
-
         executorService.execute(() ->
         {
             try
             {
                 String json = SyncGet(DAVE_URL + coordinates);
                 davesTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-                System.out.println("Dave finished.");
             }
             catch (Exception e)
             {
-                //TODO
                 System.out.println("Exception getting taxis from Dave: " + e);
             }
         });
@@ -230,11 +231,9 @@ public class RidewaysConsoleApplication
             {
                 String json = SyncGet(ERIC_URL + coordinates);
                 ericsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-                System.out.println("Eric finished.");
             }
             catch (Exception e)
             {
-                //TODO
                 System.out.println("Exception getting taxis from Eric: " + e);
             }
         });
@@ -244,16 +243,14 @@ public class RidewaysConsoleApplication
             {
                 String json = SyncGet(JEFF_URL + coordinates);
                 jeffsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-                System.out.println("Jeff finished.");
             }
             catch (Exception e)
             {
-                //TODO
                 System.out.println("Exception getting taxis from Jeff: " + e);
             }
         });
-        System.out.println("I'm sort of async baby.");
 
+        // Shutdown the executor.
         executorService.shutdown();
         try
         {
@@ -264,29 +261,60 @@ public class RidewaysConsoleApplication
             System.out.println("Exception terminating: " + ex);
         }
 
-        System.out.println("Looping to get items.");
+        HashMap<String, Integer> filteredDave = davesTaxis.get();
+        HashMap<String, Integer> filteredEric = ericsTaxis.get();
+        HashMap<String, Integer> filteredJeff = jeffsTaxis.get();
 
-        for(Map.Entry<String, Integer> entry : davesTaxis.get().entrySet())
+        BuildAndPrintResults(filteredDave, filteredEric, filteredJeff);
+    }
+
+    private static void BuildAndPrintResults(HashMap<String, Integer> dave, HashMap<String, Integer> eric,
+                                             HashMap<String, Integer> jeff)
+    {
+        // Iterate over the collection of car types
+        // Update provider and price based on whether we find the carType in the respective collection
+        // And if it is cheaper than the current price.
+        for(Map.Entry<String, Integer> entry : carTypeCapacity.entrySet())
         {
             String carType = entry.getKey();
-            Integer price = entry.getValue();
-            System.out.println(carType + " - " + price);
-        }
+            String currentProvider = "";
+            int currentPrice = Integer.MAX_VALUE;
 
-        System.out.println("Jeff");
-        for(Map.Entry<String, Integer> entry : jeffsTaxis.get().entrySet())
-        {
-            String carType = entry.getKey();
-            Integer price = entry.getValue();
-            System.out.println(carType + " - " + price);
-        }
+            // Check to see if Dave has the car and at a better price.
+            if(dave.containsKey(carType))
+            {
+                if(currentPrice > dave.get(carType))
+                {
+                    currentPrice = dave.get(carType);
+                    currentProvider = "Dave";
+                }
+            }
 
-        System.out.println("Eric");
-        for(Map.Entry<String, Integer> entry : ericsTaxis.get().entrySet())
-        {
-            String carType = entry.getKey();
-            Integer price = entry.getValue();
-            System.out.println(carType + " - " + price);
+            // Check to see if Eric has the car and at a better price.
+            if(eric.containsKey(carType))
+            {
+                if(currentPrice > eric.get(carType))
+                {
+                    currentPrice = eric.get(carType);
+                    currentProvider = "Eric";
+                }
+            }
+
+            // Check to see if Jeff has the car and at a better price.
+            if(jeff.containsKey(carType))
+            {
+                if(currentPrice > jeff.get(carType))
+                {
+                    currentPrice = jeff.get(carType);
+                    currentProvider = "Jeff";
+                }
+            }
+
+            // If we did find a car and a provider we can print it.
+            if(!currentProvider.isEmpty())
+            {
+                System.out.println(carType + " - " + currentProvider + " - " + currentPrice);
+            }
         }
     }
 
