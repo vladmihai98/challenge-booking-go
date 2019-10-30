@@ -43,12 +43,23 @@ public class RidewaysConsoleApplication
             return;
         }
 
-        // We're ready to go so build the OkHttpClient.
-        ConfigureHttpClient();
-
         if(option.equals("Dave"))
         {
-            GetResultsFromDave(args[1]);
+            TreeMap<Integer, String> results =  GetResultsFromDave(args[1]);
+
+            if(results.isEmpty())
+            {
+                System.out.println("No results were returned from Dave.");
+                return;
+            }
+
+            // Iterate over the collection and display the results.
+            for(Map.Entry<Integer, String> entry : results.entrySet())
+            {
+                Integer price = entry.getKey();
+                String carType = entry.getValue();
+                System.out.println(carType + " - " + price);
+            }
         }
         else if(option.equals("cheapest"))
         {
@@ -63,7 +74,6 @@ public class RidewaysConsoleApplication
                 return;
             }
 
-            PopulateCarHashMap();
             GetCheapestResults(args[1], passengers);
         }
     }
@@ -118,20 +128,14 @@ public class RidewaysConsoleApplication
         return option;
     }
 
-    private static void ConfigureHttpClient()
+    static TreeMap<Integer, String> GetResultsFromDave(String coordinates)
     {
-        okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(2, TimeUnit.SECONDS) // as request allow 2s for a response
-                .build();
-    }
+        TreeMap<Integer, String> orderedOptions = new TreeMap<Integer, String>(Collections.reverseOrder());
 
-    private static void GetResultsFromDave(String coordinates)
-    {
         try
         {
-            TreeMap<Integer, String> orderedOptions = new TreeMap<Integer, String>(Collections.reverseOrder());
+            // Configure the OkHttpClient.
+            ConfigureHttpClient();
 
             // Make an HTTP request to Dave's taxis.
             String result = SyncGet(DAVE_URL + coordinates);
@@ -147,21 +151,15 @@ public class RidewaysConsoleApplication
                     int price = subObject.getInt("price");
                     orderedOptions.put(price, carType);
                 }
-
-                // Iterate over the collection and display the results.
-                for(Map.Entry<Integer, String> entry : orderedOptions.entrySet())
-                {
-                    Integer price = entry.getKey();
-                    String carType = entry.getValue();
-                    System.out.println(carType + " - " + price);
-                }
             }
         }
         catch (Exception ex)
         {
             //TODO remove exception from message.
-            System.out.println("Exception retrieving details from Dave's API. Please try again." + ex);
+            System.out.println("Exception retrieving details from Dave's API. Please try again. " + ex);
         }
+
+        return orderedOptions;
     }
 
     private static HashMap<String, Integer> BuildHashMapFromHttpResult(String json, int passengers)
@@ -190,22 +188,15 @@ public class RidewaysConsoleApplication
         return result;
     }
 
-    private static void PopulateCarHashMap()
-    {
-        // Populate the hash map with values
-        if(carTypeCapacity.isEmpty())
-        {
-            carTypeCapacity.put("STANDARD", 4);
-            carTypeCapacity.put("EXECUTIVE", 4);
-            carTypeCapacity.put("LUXURY", 4);
-            carTypeCapacity.put("PEOPLE_CARRIER", 6);
-            carTypeCapacity.put("LUXURY_PEOPLE_CARRIER", 6);
-            carTypeCapacity.put("MINIBUS", 16);
-        }
-    }
+
 
     private static void GetCheapestResults(String coordinates, int passengers)
     {
+        PopulateCarHashMap();
+
+        // Configure the OkHttpClient - needed for API access.
+        ConfigureHttpClient();
+
         ExecutorService executorService = Executors.newFixedThreadPool(3);
         AtomicReference<HashMap<String, Integer>> davesTaxis = new AtomicReference<>(new HashMap<>());
         AtomicReference<HashMap<String, Integer>> ericsTaxis = new AtomicReference<>(new HashMap<>());
@@ -315,6 +306,34 @@ public class RidewaysConsoleApplication
             {
                 System.out.println(carType + " - " + currentProvider + " - " + currentPrice);
             }
+        }
+    }
+
+    // Helper functions below
+
+    private static void PopulateCarHashMap()
+    {
+        // Populate the hash map with values
+        if(carTypeCapacity.isEmpty())
+        {
+            carTypeCapacity.put("STANDARD", 4);
+            carTypeCapacity.put("EXECUTIVE", 4);
+            carTypeCapacity.put("LUXURY", 4);
+            carTypeCapacity.put("PEOPLE_CARRIER", 6);
+            carTypeCapacity.put("LUXURY_PEOPLE_CARRIER", 6);
+            carTypeCapacity.put("MINIBUS", 16);
+        }
+    }
+
+    private static void ConfigureHttpClient()
+    {
+        if(okHttpClient == null)
+        {
+            okHttpClient = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(2, TimeUnit.SECONDS) // as request allow 2s for a response
+                    .build();
         }
     }
 
