@@ -74,7 +74,7 @@ public class RidewaysConsoleApplication
         }
     }
 
-    private static boolean DisplayProgramDetails(String[] args)
+    static boolean DisplayProgramDetails(String[] args)
     {
         if(args.length == 0 ||
           (args.length == 1 && args[0].equals("--help")))
@@ -90,7 +90,7 @@ public class RidewaysConsoleApplication
         return false;
     }
 
-    private static String HandleArguments(String[] args)
+    static String HandleArguments(String[] args)
     {
         String option = null;
 
@@ -146,9 +146,7 @@ public class RidewaysConsoleApplication
                     String carType = subObject.getString("car_type");
                     int price = subObject.getInt("price");
 
-                    Car item = new Car();
-                    item.setPrice(price);
-                    item.setType(carType);
+                    Car item = new Car(carType, price);
                     resultList.add(item);
                 }
             }
@@ -168,72 +166,80 @@ public class RidewaysConsoleApplication
     {
         ArrayList<ArrayList<Car>> resultList = new ArrayList<>();
 
-        // Build the hash map of car types and their capacity.
-        PopulateCarHashMap();
-
-        // Configure the OkHttpClient - needed for API access.
-        ConfigureHttpClient();
-
-        // Run the requests in parallel since they do not depend on each other.
-        ExecutorService executorService = Executors.newFixedThreadPool(3);
-        AtomicReference<HashMap<String, Integer>> davesTaxis = new AtomicReference<>(new HashMap<>());
-        AtomicReference<HashMap<String, Integer>> ericsTaxis = new AtomicReference<>(new HashMap<>());
-        AtomicReference<HashMap<String, Integer>> jeffsTaxis = new AtomicReference<>(new HashMap<>());
-
-        // Similar to C# Task.Run()
-        executorService.execute(() ->
-        {
-            try
-            {
-                String json = SyncGet(DAVE_URL + coordinates);
-                davesTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-            }
-            catch (Exception e)
-            {
-                System.out.println("Exception getting taxis from Dave: " + e);
-            }
-        });
-        executorService.execute(() ->
-        {
-            try
-            {
-                String json = SyncGet(ERIC_URL + coordinates);
-                ericsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-            }
-            catch (Exception e)
-            {
-                System.out.println("Exception getting taxis from Eric: " + e);
-            }
-        });
-        executorService.execute(() ->
-        {
-            try
-            {
-                String json = SyncGet(JEFF_URL + coordinates);
-                jeffsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
-            }
-            catch (Exception e)
-            {
-                System.out.println("Exception getting taxis from Jeff: " + e);
-            }
-        });
-
-        // Shutdown the executor.
-        executorService.shutdown();
         try
         {
-            executorService.awaitTermination(10, TimeUnit.SECONDS);
+            // Build the hash map of car types and their capacity.
+            PopulateCarHashMap();
+
+            // Configure the OkHttpClient - needed for API access.
+            ConfigureHttpClient();
+
+            // Run the requests in parallel since they do not depend on each other.
+            ExecutorService executorService = Executors.newFixedThreadPool(3);
+            AtomicReference<HashMap<String, Integer>> davesTaxis = new AtomicReference<>(new HashMap<>());
+            AtomicReference<HashMap<String, Integer>> ericsTaxis = new AtomicReference<>(new HashMap<>());
+            AtomicReference<HashMap<String, Integer>> jeffsTaxis = new AtomicReference<>(new HashMap<>());
+
+            // Similar to C# Task.Run()
+            executorService.execute(() ->
+            {
+                try
+                {
+                    String json = SyncGet(DAVE_URL + coordinates);
+                    davesTaxis.set(BuildHashMapFromHttpResult(json, passengers));
+                }
+                catch (Exception e)
+                {
+                    System.out.println("Exception getting taxis from Dave: " + e);
+                }
+            });
+            executorService.execute(() ->
+            {
+                try
+                {
+                    String json = SyncGet(ERIC_URL + coordinates);
+                    ericsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
+                }
+                catch (Exception e)
+                {
+                    System.out.println("Exception getting taxis from Eric: " + e);
+                }
+            });
+            executorService.execute(() ->
+            {
+                try
+                {
+                    String json = SyncGet(JEFF_URL + coordinates);
+                    jeffsTaxis.set(BuildHashMapFromHttpResult(json, passengers));
+                }
+                catch (Exception e)
+                {
+                    System.out.println("Exception getting taxis from Jeff: " + e);
+                }
+            });
+
+            // Shutdown the executor.
+            executorService.shutdown();
+            try
+            {
+                executorService.awaitTermination(10, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException ex)
+            {
+                System.out.println("Exception terminating: " + ex);
+            }
+
+            HashMap<String, Integer> filteredDave = davesTaxis.get();
+            HashMap<String, Integer> filteredEric = ericsTaxis.get();
+            HashMap<String, Integer> filteredJeff = jeffsTaxis.get();
+
+            return BuildFinalResults(filteredDave, filteredEric, filteredJeff);
         }
-        catch (InterruptedException ex)
+        catch (Exception ex)
         {
-            System.out.println("Exception terminating: " + ex);
+            System.out.println("Exception getting cheapest results: " + ex);
+            return new ArrayList<>();
         }
-
-        HashMap<String, Integer> filteredDave = davesTaxis.get();
-        HashMap<String, Integer> filteredEric = ericsTaxis.get();
-        HashMap<String, Integer> filteredJeff = jeffsTaxis.get();
-
-        return BuildFinalResults(filteredDave, filteredEric, filteredJeff);
     }
 
     private static HashMap<String, Integer> BuildHashMapFromHttpResult(String json, int passengers)

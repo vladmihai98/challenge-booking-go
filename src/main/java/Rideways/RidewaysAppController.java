@@ -13,6 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 
+/**
+ * Controller for the API in the part2 of the BookingGo Challenge.
+ * Returns the list of cars available from Dave in descending order or
+ * The list of cars available from the cheapest supplier.
+ *
+ * @author Vlad Mihai Vasile
+ */
+
 @RestController
 @RequestMapping("/api")
 public class RidewaysAppController

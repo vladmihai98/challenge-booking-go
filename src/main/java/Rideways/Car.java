@@ -1,5 +1,10 @@
 package Rideways;
 
+/**
+ * Object to hold type, supplier and price.
+ *
+ * @author Vlad Mihai Vasile
+ */
 public class Car implements Comparable<Car>
 {
     // TODO change to enum
@@ -9,9 +14,12 @@ public class Car implements Comparable<Car>
 
     public Car()
     {
-        type = "";
-        supplier = "";
-        price = 0;
+        this("", "", 0);
+    }
+
+    public Car(String type, int price)
+    {
+        this(type, "", price);
     }
 
     public Car(String type, String supplier, int price)
