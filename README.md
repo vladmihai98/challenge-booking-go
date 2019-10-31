@@ -37,7 +37,7 @@
 ## Run API
 - run the following to fire up the API:
 
-`java -jar target/booking-go-challenge.1.0.0.jar`
+`java -jar target/booking-go-challenge-1.0.0.jar`
 
 - to make a request to dave's taxis, access the following link:
 
