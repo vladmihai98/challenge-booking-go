@@ -41,7 +41,7 @@
 
 - to make a request to dave's taxis, access the following link:
 
-http://localhost:8080/api/dave/?coordinates=pickup=51.470020,-0.454295&dropoff=3.410632,-2.157533
+http://localhost:8080/api/dave/?pickup=51.470020,-0.454295&dropoff=3.410632,-2.157533
 
 - to make a request for the cheapest taxis, access the following link:
 
