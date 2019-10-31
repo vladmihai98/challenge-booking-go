@@ -67,10 +67,17 @@ public class RidewaysConsoleApplication
             }
 
             ArrayList<Car> results = GetCheapestResults(args[1], passengers);
-            results.forEach(car ->
+            if(results.isEmpty())
             {
-                System.out.println(car.toStringSupplier());
-            });
+                System.out.println("No cars available at this time. Please try again later.");
+            }
+            else
+            {
+                results.forEach(car ->
+                {
+                    System.out.println(car.toStringSupplier());
+                });
+            }
         }
     }
 
