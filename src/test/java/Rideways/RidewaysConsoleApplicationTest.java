@@ -15,40 +15,60 @@ import static org.junit.Assert.*;
 public class RidewaysConsoleApplicationTest
 {
     @Test
-    public void testProgramDetails()
+    public void testProgramDetailsNullArgs()
     {
         String[] args = new String[0];
         boolean methodResult = RidewaysConsoleApplication.DisplayProgramDetails(args);
         assertTrue(methodResult);
-
-        args = new String[] { "--help" };
-        methodResult = RidewaysConsoleApplication.DisplayProgramDetails(args);
+    }
+    
+    @Test
+    public void testProgramDetailsHelpArgs()
+    {
+        String[] args = new String[] { "--help" };
+        boolean methodResult = RidewaysConsoleApplication.DisplayProgramDetails(args);
         assertTrue(methodResult);
     }
-
+    
+    // Null cases for arguments handling
     @Test
-    public void testHandleArguments()
+    public void testHandleArgumentsGibberish()
     {
-        // Null cases first.
         String[] args = new String[] { "--help", "nonsense" };
         String result = RidewaysConsoleApplication.HandleArguments(args);
         assertNull(result);
-
-        args = new String[] { "Dave" };
-        result = RidewaysConsoleApplication.HandleArguments(args);
+    }
+    
+    @Test
+    public void testHandleArgumentsDaveNull()
+    {
+        String[] args = new String[] { "Dave" };
+        String result = RidewaysConsoleApplication.HandleArguments(args);
         assertNull(result);
-
-        args = new String[] { "cheapest" };
-        result = RidewaysConsoleApplication.HandleArguments(args);
+    }
+    
+    @Test
+    public void testHandleArgumentsCheapestNull()
+    {
+        String[] args = new String[] { "cheapest" };
+        String result = RidewaysConsoleApplication.HandleArguments(args);
         assertNull(result);
-
-        // Valid cases now.
-        args = new String[] { "Dave", "coordinates" };
-        result = RidewaysConsoleApplication.HandleArguments(args);
+    }
+    
+    // Valid cases for arguments handling
+    @Test
+    public void testHandleArgumentsDaveCoordinates()
+    {
+        String[] args = new String[] { "Dave", "coordinates" };
+        String result = RidewaysConsoleApplication.HandleArguments(args);
         assertEquals("Dave", result);
-
-        args = new String[] {"cheapest", "coordinates", "passengers" };
-        result = RidewaysConsoleApplication.HandleArguments(args);
+    }
+    
+    @Test
+    public void testHandleArgumentsCheapestCoordinatesPassengers()
+    {
+        String[] args = new String[] {"cheapest", "coordinates", "passengers" };
+        String result = RidewaysConsoleApplication.HandleArguments(args);
         assertEquals("cheapest", result);
     }
 
